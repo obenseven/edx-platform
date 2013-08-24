@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse
 from django.test.client import Client
 
 from student.tests.factories import UserFactory, CourseEnrollmentFactory
-from courseware.tests.tests import TEST_DATA_MONGO_MODULESTORE
+from courseware.tests.modulestore_config import TEST_DATA_MIXED_MODULESTORE
 from xmodule.tests import get_test_system
 from xmodule.modulestore import Location
 from xmodule.modulestore.django import modulestore
@@ -20,7 +20,7 @@ from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 
 
-@override_settings(MODULESTORE=TEST_DATA_MONGO_MODULESTORE)
+@override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 class BaseTestXmodule(ModuleStoreTestCase):
     """Base class for testing Xmodules with mongo store.
 
@@ -50,8 +50,7 @@ class BaseTestXmodule(ModuleStoreTestCase):
         self.course = CourseFactory.create(data=self.COURSE_DATA)
 
         # Turn off cache.
-        modulestore().request_cache = None
-        modulestore().metadata_inheritance_cache_subsystem = None
+        modulestore().set_modulestore_configuration({})
 
         chapter = ItemFactory.create(
             parent_location=self.course.location,
@@ -81,12 +80,16 @@ class BaseTestXmodule(ModuleStoreTestCase):
         # Allow us to assert that the template was called in the same way from
         # different code paths while maintaining the type returned by render_template
         self.runtime.render_template = lambda template, context: u'{!r}, {!r}'.format(template, sorted(context.items()))
+
         model_data = {'location': self.item_descriptor.location}
         model_data.update(self.MODEL_DATA)
 
         self.item_module = self.item_descriptor.module_class(
-            self.runtime, self.item_descriptor, model_data
+            self.runtime,
+            self.item_descriptor,
+            model_data
         )
+
         self.item_url = Location(self.item_module.location).url()
 
         # login all users for acces to Xmodule

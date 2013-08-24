@@ -88,18 +88,18 @@ def the_page_title_should_contain(step, title):
 
 @step('I log in$')
 def i_log_in(step):
-    world.log_in('robot', 'test')
+    world.log_in(username='robot', password='test')
 
 
 @step('I am a logged in user$')
 def i_am_logged_in_user(step):
     world.create_user('robot', 'test')
-    world.log_in('robot', 'test')
+    world.log_in(username='robot', password='test')
 
 
 @step('I am not logged in$')
 def i_am_not_logged_in(step):
-    world.browser.cookies.delete()
+    world.visit('logout')
 
 
 @step('I am staff for course "([^"]*)"$')
@@ -138,19 +138,22 @@ def should_have_link_with_path_and_text(step, path, text):
 
 @step(r'should( not)? see "(.*)" (?:somewhere|anywhere) (?:in|on) (?:the|this) page')
 def should_see_in_the_page(step, doesnt_appear, text):
+    multiplier = 1
+    if world.SAUCE_ENABLED:
+        multiplier = 2
     if doesnt_appear:
-        assert world.browser.is_text_not_present(text, wait_time=5)
+        assert world.browser.is_text_not_present(text, wait_time=5*multiplier)
     else:
-        assert world.browser.is_text_present(text, wait_time=5)
+        assert world.browser.is_text_present(text, wait_time=5*multiplier)
 
 
 @step('I am logged in$')
 def i_am_logged_in(step):
     world.create_user('robot', 'test')
-    world.log_in('robot', 'test')
+    world.log_in(username='robot', password='test')
     world.browser.visit(django_url('/'))
     # You should not see the login link
-    assert_equals(world.browser.find_by_css('a#login'), [])
+    assert world.is_css_not_present('a#login')
 
 
 @step(u'I am an edX user$')
